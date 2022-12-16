@@ -1,28 +1,31 @@
 ﻿using ByteBank_v01;
 
-
-int option;
+CLI cli = new CLI();
+uint option;
 
 do
 {
-    option = CLI.MainMenu();
+    option = cli.Startup();
 
-    switch (option)
+    switch(option)
     {
         case 1:
-            Console.WriteLine("Abrir conta do cliente...");
+            cli.CreateAccount();
             break;
         case 2:
-            Console.WriteLine("Realizar um depósito...");
+            cli.DeleteAccount();
             break;
         case 3:
-            Console.WriteLine("Realizar um saque...");
+            cli.ListAccounts();
             break;
         case 4:
-            Console.WriteLine("Realizar uma transferência...");
+            cli.AccountDetail();
             break;
         case 5:
-            Console.WriteLine("Encerrar conta corrente...");
+            cli.GetBankTotalBalance();
+            break;
+        case 6:
+            cli.ManipulateAccount();
             break;
     }
 } while (option != 0);
