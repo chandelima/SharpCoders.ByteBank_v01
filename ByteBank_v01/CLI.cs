@@ -19,7 +19,8 @@ public class CLI
             Console.WriteLine("5 - Quantia total armazenada no banco");
             Console.WriteLine("6 - Manipular a conta");
             Console.WriteLine("0 - Sair do Programa");
-            Console.Write("\nDigite a opção desejada: ");
+            Console.WriteLine();
+            Console.Write("Digite a opção desejada: ");
 
             inputValid = uint.TryParse(Console.ReadLine(), out inputValue);
             if(inputValid == false || inputValue > 6)
@@ -160,6 +161,7 @@ public class CLI
                 account = GetAccount();
                 if (account == null)
                     return;
+
             } else
             {
                 Console.Clear();
@@ -202,7 +204,7 @@ public class CLI
         } while (inputValid == false || inputValue > 3);
     }
 
-    public static void MakeDeposit(AccountDomain account)
+    public void MakeDeposit(AccountDomain account)
     {
         Console.Clear();
 
@@ -216,7 +218,7 @@ public class CLI
         Utils.Continue();
     }
 
-    public static void MakeWithdraw(AccountDomain account)
+    public void MakeWithdraw(AccountDomain account)
     {
         Console.Clear();
 
@@ -235,7 +237,7 @@ public class CLI
         Utils.Continue();
     }
 
-    public static void MakeTransference(AccountDomain sourceAccount)
+    public void MakeTransference(AccountDomain sourceAccount)
     {
         Console.Clear();
 
@@ -287,7 +289,7 @@ public class CLI
         return account;
     }
 
-    public static bool TransferOperation(AccountDomain sourceAccount, AccountDomain destinationAccount, decimal value)
+    public bool TransferOperation(AccountDomain sourceAccount, AccountDomain destinationAccount, decimal value)
     {
         if (sourceAccount.Balance > value)
         {

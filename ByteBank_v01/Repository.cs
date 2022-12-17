@@ -1,10 +1,7 @@
 ﻿namespace ByteBank_v01;
 public static class Repository
 {
-    private static List<AccountDomain> Accounts { get; set; } = new List<AccountDomain>() {
-        new AccountDomain("123456789", "Pedro Álvares Cabral", "12345678"),
-        new AccountDomain("987654321", "Monteiro Lobato", "12345678")
-    };
+    private static List<AccountDomain> Accounts { get; set; } = new List<AccountDomain>();
 
     public static AccountDomain Create(AccountDomain account)
     {
