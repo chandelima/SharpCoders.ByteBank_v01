@@ -1,43 +1,39 @@
-﻿namespace ByteBank_v01;
-public static class Repository
-{
-    private static List<AccountDomain> Accounts { get; set; } = new List<AccountDomain>();
+﻿using ByteBank_v01.Model;
 
-    public static AccountDomain Create(AccountDomain account)
+namespace ByteBank_v01;
+public class Repository
+{
+    private List<Account> Accounts { get; set; } = new List<Account>();
+
+    public Account Create(Account account)
     {
         Accounts.Add(account);
+        JsonIO.JsonSerialize(Accounts);
+
         return account;
     }
 
-    public static IEnumerable<AccountDomain> FindAll()
+    public List<Account> GetAccounts()
     {
+        Accounts = JsonIO.JsonDesserialize();
         return Accounts;
     }
 
-    public static AccountDomain FindByCpf(string cpf)
+    public bool DeleteAccount(Account account)
     {
-        AccountDomain account = Accounts
-            .FirstOrDefault(acc => acc.Cpf == cpf);
-        return account;
+        bool result = Accounts.Remove(account);
+        JsonIO.JsonSerialize(Accounts);
+
+        return result;
     }
 
-    public static AccountDomain FindByCpfAndPass(string cpf, string password)
+    public void UpdateAccount(Account changedAccount)
     {
-        AccountDomain account = Accounts
-            .Where(acc => acc.Cpf == cpf)
-            .FirstOrDefault(acc => acc.Password == password);
-        return account;
-    }
+        var repositoryAccount = Accounts
+            .FirstOrDefault(acc => acc.Cpf == changedAccount.Cpf);
 
-    public static bool DeleteAccount(AccountDomain account)
-    {
-        return Accounts.Remove(account);
-    }
-    public static (decimal Balance, int Amount) GetBankTotalBalance()
-    {
-        decimal totalBalance = Accounts.Sum(accs => accs.Balance);
-        int totalAccounts = Accounts.Count();
-        return (totalBalance, totalAccounts);
+        repositoryAccount.Balance = changedAccount.Balance;
+        JsonIO.JsonSerialize(Accounts);
 
     }
 }
