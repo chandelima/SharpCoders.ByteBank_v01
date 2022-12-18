@@ -1,24 +1,21 @@
 ﻿using System.Text;
 
-namespace ByteBank_v01;
-public class AccountDomain
-{
-    public string Cpf { get; }
-    public string HolderName { get; }
-    public string Password { get; }
-    public decimal Balance { get; private set; }
+namespace ByteBank_v01.Model;
 
-    public AccountDomain(string cpf, string holderName, string password, decimal balance = 0)
+public class Account
+{
+    public string Cpf { get; set; }
+    public string HolderName { get; set; }
+    public string Password { get; set; }
+    public decimal Balance { get; set; }
+
+    public Account(string cpf, string holderName, string password, decimal balance = 0)
     {
         Cpf = cpf;
         HolderName = holderName;
         Password = password;
         Balance = balance;
     }
-
-    public void MakeDeposit(decimal value) => Balance += value;
-
-    public void MakeWithDraw(decimal value) => Balance -= value;
 
     public override string ToString()
     {

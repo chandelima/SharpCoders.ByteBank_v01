@@ -20,65 +20,6 @@ public class Utils
         Continue();
     }
 
-    public static string getPassword()
-    {
-        var pass = string.Empty;
-        ConsoleKey key;
-        do
-        {
-            var keyInfo = Console.ReadKey(intercept: true);
-            key = keyInfo.Key;
-
-            if (key == ConsoleKey.Backspace && pass.Length > 0)
-            {
-                Console.Write("\b \b");
-                pass = pass[0..^1];
-            }
-            else if (!char.IsControl(keyInfo.KeyChar))
-            {
-                Console.Write("*");
-                pass += keyInfo.KeyChar;
-            }
-        } while (key != ConsoleKey.Enter);
-        
-        Console.WriteLine();
-        return pass;
-    }
-
-    public static decimal getDecimal()
-    {
-        bool isValid;
-        decimal value;
-
-        do
-        {
-            isValid = decimal.TryParse(Console.ReadLine(), out value);
-            if (isValid == false || value <= 0)
-                Console.WriteLine("O valor fornecido é inválido. Tente novamente e forneça o valor abaixo:");
-
-        } while (isValid == false || value <= 0);
-
-        return value;
-    }
-
-    public static string getCpf()
-    {
-        string inputCpf;
-        bool isValid;
-
-        do
-        {
-            inputCpf = Console.ReadLine();
-            isValid = ValidateCpf(inputCpf);
-
-            if (isValid == false)
-                Console.WriteLine("O CPF informado é inválido. Tente novamente e forneça o valor abaixo:");
-
-        } while (isValid == false);
-
-        return inputCpf;
-    }
-
     public static string ShowFormattedCpf(string cpf)
     {
         return Convert.ToUInt64(cpf).ToString(@"000\.000\.000\-00");

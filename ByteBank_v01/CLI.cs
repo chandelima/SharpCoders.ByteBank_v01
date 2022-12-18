@@ -1,8 +1,10 @@
 ﻿using System.Security.Principal;
+using ByteBank_v01.Model;
 
 namespace ByteBank_v01;
 public class CLI
 {
+    Service service = new Service();
     public uint Startup()
     {
         uint inputValue;
@@ -45,16 +47,16 @@ public class CLI
         string holderName = Console.ReadLine();
 
         Console.Write("CPF do titular: ");
-        string cpf = Utils.getCpf();
+        string cpf = GetCpf();
 
         string password, passwordConfirmation;
         do
         {
             Console.Write("Senha da conta (mín. 8 caractéres): ");
-            password = Utils.getPassword();
+            password = GetPassword();
 
             Console.Write("Confirme a senha da conta: ");
-            passwordConfirmation = Utils.getPassword();
+            passwordConfirmation = GetPassword();
 
             if (password != passwordConfirmation)
                 Console.WriteLine("As senhas digitadas não conferem. Tente novamente...\n");
@@ -70,15 +72,20 @@ public class CLI
         if(initialDeposit.ToLower() == "s")
         {
             Console.Write("Forneça abaixo o valor para depósito: ");
-            depositValue = Utils.getDecimal();
+            depositValue = GetDecimal();
         }
 
-        AccountDomain account = new AccountDomain(cpf, holderName, password, depositValue);
-        Repository.Create(account);
+        Account account = new Account(cpf, holderName, password, depositValue);
+        string result = service.CreateAccount(account);
 
-        Console.Clear();
-        Console.WriteLine("Conta bancária criada com sucesso. Seguem dados da nova conta abaixo:");
-        Console.WriteLine(account);
+        if (result == "")
+        {
+            Console.Clear();
+            Console.WriteLine("Conta bancária criada com sucesso. Seguem dados da nova conta abaixo:");
+            Console.WriteLine(account);
+        }
+        else
+            ShowError(result);
 
         Utils.Continue();
     }
@@ -88,7 +95,7 @@ public class CLI
         Console.Clear();
         Console.WriteLine("Para encerrar a sua conta, forneça os dados a seguir: \n");
 
-        AccountDomain account = GetAccount();
+        Account account = GetAccount();
 
         if (account is not null)
         {
@@ -99,15 +106,13 @@ public class CLI
             
             if(confirmation.ToLower() == "s")
             {
-                bool deletionResult = Repository.DeleteAccount(account);
+                bool deletionResult = service.DeleteAccount(account);
                 if (deletionResult == true)
                     Console.WriteLine("Conta encerrada com sucesso.");
                 else
                     Console.WriteLine("Erro na operção de exclusão.");
             } else
-            {
                 Console.WriteLine("Operação de encerramento cancelada.");
-            }
         }
 
         Utils.Continue();
@@ -116,10 +121,17 @@ public class CLI
     public void ListAccounts()
     {
         Console.Clear();
-        Console.WriteLine("LISTAGEM DE CONTAS ATIVAS:\n");
 
-        foreach (AccountDomain account in Repository.FindAll())
-            Console.WriteLine(account.OneLineInfo());
+        List<Account> accounts = service.GetAllAccounts();
+
+        if (accounts.Count() > 0)
+        {
+            Console.WriteLine("LISTAGEM DE CONTAS ATIVAS:\n");
+
+            foreach (Account account in accounts)
+                Console.WriteLine(account.OneLineInfo());
+        } else
+            Console.WriteLine("Não há nenhuma conta cadastrada para ser exibida.");
 
         Utils.Continue();
     }
@@ -128,7 +140,7 @@ public class CLI
     {
         Console.Clear();
         
-        AccountDomain account = GetAccount();
+        Account account = GetAccount();
         if (account == null)
             return;
 
@@ -138,11 +150,11 @@ public class CLI
 
     public void GetBankTotalBalance()
     {
-        (decimal Balance, int Accounts) total = Repository.GetBankTotalBalance();
+        (decimal Balance, int Accounts) total = service.GetBankTotalBalance();
 
         Console.Clear();
         Console.WriteLine("VALOR TOTAL ARMAZENADO NO BANCO:");
-        Console.WriteLine($"No momento, o banco possui {total.Accounts} contas ativas e está armazenando R${total.Balance:F2}.");
+        Console.WriteLine($"No momento, o banco possui {total.Accounts} conta(s) ativa(s) e está armazenando R${total.Balance:F2}.");
         Utils.Continue();
     }
 
@@ -150,7 +162,7 @@ public class CLI
     {
         uint inputValue = 100;
         bool inputValid = false;
-        AccountDomain account = null;
+        Account account = null;
 
         do
         {
@@ -204,30 +216,32 @@ public class CLI
         } while (inputValid == false || inputValue > 3);
     }
 
-    public void MakeDeposit(AccountDomain account)
+    public void MakeDeposit(Account account)
     {
         Console.Clear();
 
         Console.Write("Para efetuar a operação, forneça o valor a ser depositado: ");
-        decimal depositValue = Utils.getDecimal();
+        decimal depositValue = GetDecimal();
 
-        account.MakeDeposit(depositValue);
+        account = service.MakeDeposit(account, depositValue);
+
         Console.WriteLine("\nDepósito realizado com sucesso.");
         Console.WriteLine($"O saldo atual da sua conta é: R${account.Balance:F2}.");
 
         Utils.Continue();
     }
 
-    public void MakeWithdraw(AccountDomain account)
+    public void MakeWithdraw(Account account)
     {
         Console.Clear();
 
         Console.Write("Para efetuar a operação, forneça o valor a ser sacado: ");
-        decimal withdrawValue = Utils.getDecimal();
+        decimal withdrawValue = GetDecimal();
 
         if (account.Balance > withdrawValue)
         {
-            account.MakeWithDraw(withdrawValue);
+            account = service.MakeWithDraw(account, withdrawValue);
+
             Console.WriteLine("\nSaque realizado com sucesso.");
             Console.WriteLine($"O saldo atual da sua conta é: R${account.Balance:F2}.");
         }
@@ -237,14 +251,14 @@ public class CLI
         Utils.Continue();
     }
 
-    public void MakeTransference(AccountDomain sourceAccount)
+    public void MakeTransference(Account sourceAccount)
     {
         Console.Clear();
 
         Console.Write("Para efetuar a transferência, forneça o CPF da conta de destino: ");
         string destinationCpf = Console.ReadLine();
 
-        AccountDomain destinationAccount = Repository.FindByCpf(destinationCpf);
+        Account destinationAccount = service.GetAccountByCpf(destinationCpf);
 
         if (destinationAccount == null)
         {
@@ -254,21 +268,22 @@ public class CLI
         }
 
         Console.Write("Qual o valor a ser transferido: ");
-        decimal transferValue = Utils.getDecimal();
+        decimal transferValue = GetDecimal();
 
-        bool transferResult = TransferOperation(sourceAccount, destinationAccount, transferValue);
-        if (transferResult)
+        string result = service.MakeTransfer(sourceAccount, destinationAccount, transferValue);
+        if (result == "")
         {
             Console.WriteLine("\nTransferência realizada com sucesso.");
             Console.WriteLine($"O saldo atual da sua conta é: R${sourceAccount.Balance:F2}.");
-        } else
-            Console.WriteLine("O saldo na conta é insuficiente para prosseguir com a transferência.");
+        }
+        else
+            ShowError(result);
 
         Utils.Continue();
     }
     #endregion
 
-    public static AccountDomain GetAccount()
+    public Account GetAccount()
     {
         Console.WriteLine("Forneça os dados da sua conta abaixo para prosseguir:\n");
 
@@ -276,9 +291,9 @@ public class CLI
         string cpf = Console.ReadLine();
 
         Console.Write("Senha da conta: ");
-        string password = Utils.getPassword();
+        string password = GetPassword();
 
-        AccountDomain account = Repository.FindByCpfAndPass(cpf, password);
+        Account account = service.GetAccountByCpfAndPass(cpf, password);
 
         if (account == null)
         {
@@ -289,15 +304,68 @@ public class CLI
         return account;
     }
 
-    public bool TransferOperation(AccountDomain sourceAccount, AccountDomain destinationAccount, decimal value)
+    public void ShowError(string error)
     {
-        if (sourceAccount.Balance > value)
+        Console.WriteLine("\nNão foi possível realizar a operação. Motivo:");
+        Console.WriteLine($"\t{error}");
+    }
+
+    public static decimal GetDecimal()
+    {
+        bool isValid;
+        decimal value;
+
+        do
         {
-            sourceAccount.MakeWithDraw(value);
-            destinationAccount.MakeDeposit(value);
-            return true;
-        }
-        else
-            return false;
+            isValid = decimal.TryParse(Console.ReadLine(), out value);
+            if (isValid == false || value <= 0)
+                Console.WriteLine("O valor fornecido é inválido. Tente novamente e forneça o valor abaixo:");
+
+        } while (isValid == false || value <= 0);
+
+        return value;
+    }
+
+    public static string GetCpf()
+    {
+        string inputCpf;
+        bool isValid;
+
+        do
+        {
+            inputCpf = Console.ReadLine();
+            isValid = Utils.ValidateCpf(inputCpf);
+
+            if (isValid == false)
+                Console.WriteLine("O CPF informado é inválido. Tente novamente e forneça o valor abaixo:");
+
+        } while (isValid == false);
+
+        return inputCpf;
+    }
+
+    public static string GetPassword()
+    {
+        var pass = string.Empty;
+        ConsoleKey key;
+        do
+        {
+            var keyInfo = Console.ReadKey(intercept: true);
+            key = keyInfo.Key;
+
+            if (key == ConsoleKey.Backspace && pass.Length > 0)
+            {
+                Console.Write("\b \b");
+                pass = pass[0..^1];
+            }
+            else if (!char.IsControl(keyInfo.KeyChar))
+            {
+                Console.Write("*");
+                pass += keyInfo.KeyChar;
+            }
+        } while (key != ConsoleKey.Enter);
+
+        Console.WriteLine();
+        return pass;
     }
 }
