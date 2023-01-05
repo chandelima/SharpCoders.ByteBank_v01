@@ -9,7 +9,7 @@ public class Utils
 {
     public static void Continue()
     {
-        Console.WriteLine("\nPressione qualquer tecla para continuar...");
+        Console.WriteLine("\nPressione enter para continuar...");
         Console.ReadLine();
         Console.Clear();
     }

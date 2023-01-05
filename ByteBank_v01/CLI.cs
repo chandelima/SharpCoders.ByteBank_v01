@@ -1,18 +1,52 @@
 ﻿using System.Security.Principal;
+using System.Text;
 using ByteBank_v01.Model;
 
 namespace ByteBank_v01;
 public class CLI
 {
     Service service = new Service();
-    public uint Startup()
+    
+    public void Startup()
+    {
+        uint option;
+
+        do
+        {
+            option = MainScreen();
+
+            switch (option)
+            {
+                case 1:
+                    CreateAccount();
+                    break;
+                case 2:
+                    DeleteAccount();
+                    break;
+                case 3:
+                    ListAccounts();
+                    break;
+                case 4:
+                    AccountDetail();
+                    break;
+                case 5:
+                    GetBankTotalBalance();
+                    break;
+                case 6:
+                    ManipulateAccount();
+                    break;
+            }
+        } while (option != 0);
+    }
+    
+    public uint MainScreen()
     {
         uint inputValue;
         bool inputValid;
 
         do
         {
-            Console.Clear();
+            ShowHeader();
 
             Console.WriteLine("1 - Abrir uma nova conta");
             Console.WriteLine("2 - Encerrar uma conta existente");
@@ -39,7 +73,7 @@ public class CLI
 
     public void CreateAccount()
     {
-        Console.Clear();
+        ShowHeader();
 
         Console.WriteLine("Para criar uma nova conta, forneça os dados a seguir: \n");
         
@@ -48,6 +82,14 @@ public class CLI
 
         Console.Write("CPF do titular: ");
         string cpf = GetCpf();
+
+        if(service.GetAccountByCpf(cpf) != null)
+        {
+            Console.WriteLine("\nO CPF informado já possui conta registrada. Confira os dados informados e tente novamente.");
+            Utils.Continue();
+            return;
+        }
+
 
         string password, passwordConfirmation;
         do
@@ -92,12 +134,13 @@ public class CLI
 
     public void DeleteAccount()
     {
-        Console.Clear();
+        ShowHeader();
+
         Console.WriteLine("Para encerrar a sua conta, forneça os dados a seguir: \n");
 
         Account account = GetAccount();
 
-        if (account is not null)
+        if (account != null)
         {
             Console.WriteLine("\nConfira abaixo os dados da conta a ser excluída");
             Console.WriteLine(account);
@@ -120,7 +163,7 @@ public class CLI
 
     public void ListAccounts()
     {
-        Console.Clear();
+        ShowHeader();
 
         List<Account> accounts = service.GetAllAccounts();
 
@@ -138,12 +181,16 @@ public class CLI
 
     public void AccountDetail()
     {
-        Console.Clear();
+        ShowHeader();
         
         Account account = GetAccount();
         if (account == null)
+        {
             return;
+        }
 
+        ShowHeader();
+        Console.WriteLine("Detalhes da conta:");
         Console.WriteLine(account);
         Utils.Continue();
     }
@@ -152,7 +199,7 @@ public class CLI
     {
         (decimal Balance, int Accounts) total = service.GetBankTotalBalance();
 
-        Console.Clear();
+        ShowHeader();
         Console.WriteLine("VALOR TOTAL ARMAZENADO NO BANCO:");
         Console.WriteLine($"No momento, o banco possui {total.Accounts} conta(s) ativa(s) e está armazenando R${total.Balance:F2}.");
         Utils.Continue();
@@ -166,7 +213,7 @@ public class CLI
 
         do
         {
-            Console.Clear();
+            ShowHeader();
 
             if (account == null)
             {
@@ -176,7 +223,8 @@ public class CLI
 
             } else
             {
-                Console.Clear();
+                ShowHeader();
+
                 Console.WriteLine($"Seja bem-vindo(a), Sr(a). {account.HolderName}!\n");
                 Console.WriteLine("Operações disponíveis:");
                 Console.WriteLine();
@@ -218,7 +266,7 @@ public class CLI
 
     public void MakeDeposit(Account account)
     {
-        Console.Clear();
+        ShowHeader();
 
         Console.Write("Para efetuar a operação, forneça o valor a ser depositado: ");
         decimal depositValue = GetDecimal();
@@ -233,12 +281,12 @@ public class CLI
 
     public void MakeWithdraw(Account account)
     {
-        Console.Clear();
+        ShowHeader();
 
         Console.Write("Para efetuar a operação, forneça o valor a ser sacado: ");
         decimal withdrawValue = GetDecimal();
 
-        if (account.Balance > withdrawValue)
+        if (account.Balance >= withdrawValue)
         {
             account = service.MakeWithDraw(account, withdrawValue);
 
@@ -253,7 +301,7 @@ public class CLI
 
     public void MakeTransference(Account sourceAccount)
     {
-        Console.Clear();
+        ShowHeader();
 
         Console.Write("Para efetuar a transferência, forneça o CPF da conta de destino: ");
         string destinationCpf = Console.ReadLine();
@@ -285,6 +333,7 @@ public class CLI
 
     public Account GetAccount()
     {
+        ShowHeader();
         Console.WriteLine("Forneça os dados da sua conta abaixo para prosseguir:\n");
 
         Console.Write("CPF do titular: ");
@@ -367,5 +416,19 @@ public class CLI
 
         Console.WriteLine();
         return pass;
+    }
+
+    public static void ShowHeader()
+    {
+        Console.Clear();
+
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine("**************************************************************");
+        sb.AppendLine("*                                                            *");
+        sb.AppendLine("*                          BYTEBANK                          *");
+        sb.AppendLine("*                                                            *");
+        sb.AppendLine("**************************************************************");
+
+        Console.WriteLine(sb);
     }
 }
